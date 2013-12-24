@@ -1,0 +1,73 @@
+Custom FRED Data Reports
+========================================================
+
+Based on Bill McBride&rsquo;s ["Ten Economic Questions for 2014"](http://www.calculatedriskblog.com/2013/12/ten-economic-questions-for-2014.html)
+
+```{r}
+require(knitr)
+require(ggplot2)
+require(rdatamarket)
+require(plyr)
+require(lubridate)
+```
+
+## 1) Economic growth
+
+Heading into 2014, it seems most analysts expect faster economic growth.  So do I.  Will 2014 be the best year of the recovery so far?  Could 2014 be the best year since the '90s?  Or will 2014 disappoint?
+
+
+```{r gdp}
+gdp <- as.data.frame(dmseries("http://datamarket.com/data/set/3p4m/gross-domestic-product-gdp-sum-of-pieces#!ds=3p4m&display=line"))
+str(gdp)
+
+gdp$quarter <- row.names(gdp)
+names(gdp) <- c('gdp','quarter')
+  
+gdp$growth <- ( gdp[,'gdp'] - c(NA, gdp[1:nrow(gdp)-1,'gdp']) ) / c(NA, gdp[1:nrow(gdp)-1,'gdp'])
+
+gdp$qtr.num <- as.numeric(gsub(' Q', '.' ,gdp$quarter))
+
+ggplot(subset(gdp, qtr.num >= 2000.1)) + geom_line(aes(x=qtr.num, y=growth))
+
+```
+
+## 2) Employment
+
+How many payroll jobs will be added in 2013? Will we finally see some pickup over the approximately 2.1 to 2.3 million job creation rate of 2011, 2012, and 2013?
+```{r employment}
+emp <- as.data.frame(dmseries("http://datamarket.com/data/set/1mj6/employment-level"))
+
+emp <- data.frame('month_year'=row.names(emp), 'emp_level'=emp[,'Employment.Level'])
+emp$month <- match(gsub(' [0-9]{4}', '',  emp$month_year), month.abb)
+
+emp$year <- as.numeric(laply(strsplit(as.character(emp$month_year), ' '), tail, 1))
+
+emp$date <- ymd(paste(emp$year, emp$month, 1, sep='-'))
+head(emp)
+
+ggplot(subset(emp, year >= 2000)) + geom_line(aes(x=date, y=emp_level))
+
+```
+
+
+## 3) Unemployment Rate
+
+The unemployment rate is still elevated at 7.0% in November. For the last three years I've been too pessimistic on the unemployment rate because I was expecting some minor bounce back in the participation rate. Instead the participation rate continued to decline. Maybe 2014 will be the year the participation rate increases a little, or at least stabilizes. 
+
+
+```{r unemployment}
+# unemp <- as.data.frame(dmseries("http://data.is/qb61uf"))
+
+unemp <- as.data.frame(dmseries("http://datamarket.com/data/set/1les/unemployment-rate"))
+unemp <- data.frame('month_year'=row.names(unemp), 'unemp_rate'=unemp[,'All.Industries.Government.Wage.and.Salary.Workers..Not.Seasonally.Adjusted'])
+
+unemp <- subset(unemp, !is.na(unemp_rate))
+unemp$month <- match(gsub(' [0-9]{4}', '',  unemp$month_year), month.abb)
+
+unemp$year <- as.numeric(laply(strsplit(as.character(unemp$month_year), ' '), tail, 1))
+
+unemp$date <- ymd(paste(unemp$year, unemp$month, 1, sep='-'))
+
+ggplot(subset(unemp, year >= 2000)) + geom_line(aes(x=date, y=unemp_rate))
+
+```
