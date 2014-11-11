@@ -6,6 +6,13 @@ Based on Bill McBride&rsquo;s ["Ten Economic Questions for 2014"](http://www.cal
 
 ```r
 require(knitr)
+```
+
+```
+## Loading required package: knitr
+```
+
+```r
 require(ggplot2)
 ```
 
@@ -14,39 +21,50 @@ require(ggplot2)
 ```
 
 ```r
-require(rdatamarket)
-```
-
-```
-## Loading required package: rdatamarket Loading required package: zoo
-## 
-## Attaching package: 'zoo'
-## 
-## The following objects are masked from 'package:base':
-## 
-## as.Date, as.Date.numeric
-```
-
-```r
-require(plyr)
-```
-
-```
-## Loading required package: plyr
-```
-
-```r
+# require(rdatamarket)
+# require(plyr)
 require(lubridate)
 ```
 
 ```
 ## Loading required package: lubridate
+```
+
+```r
+require(quantmod)
+```
+
+```
+## Loading required package: quantmod
+## Loading required package: xts
+## Loading required package: zoo
 ## 
-## Attaching package: 'lubridate'
+## Attaching package: 'zoo'
 ## 
-## The following object is masked from 'package:plyr':
+## The following objects are masked from 'package:base':
 ## 
-## here
+##     as.Date, as.Date.numeric
+## 
+## Loading required package: TTR
+## Version 0.4-0 included new data defaults. See ?getSymbols.
+```
+
+```r
+require(scales)
+```
+
+```
+## Loading required package: scales
+```
+
+
+```r
+symboldf <- function(sym){
+  getSymbols(sym, src='FRED')
+  df <- data.frame(get(sym))
+  df$date <- ymd(row.names(df))
+  df
+}
 ```
 
 
@@ -57,65 +75,44 @@ Heading into 2014, it seems most analysts expect faster economic growth.  So do 
 
 
 ```r
-gdp <- as.data.frame(dmseries("http://datamarket.com/data/set/3p4m/gross-domestic-product-gdp-sum-of-pieces#!ds=3p4m&display=line"))
-str(gdp)
+gdp <- symboldf('GDPC1')
 ```
 
 ```
-## 'data.frame':	253 obs. of  1 variable:
-##  $ Gross.domestic.product..GDP...sum.of.pieces: int  227812 249945 274807 272827 300198 347294 360195 361414 368084 381241 ...
+##     As of 0.4-0, 'getSymbols' uses env=parent.frame() and
+##  auto.assign=TRUE by default.
+## 
+##  This  behavior  will be  phased out in 0.5-0  when the call  will
+##  default to use auto.assign=FALSE. getOption("getSymbols.env") and 
+##  getOptions("getSymbols.auto.assign") are now checked for alternate defaults
+## 
+##  This message is shown once per session and may be disabled by setting 
+##  options("getSymbols.warning4.0"=FALSE). See ?getSymbol for more details
 ```
 
 ```r
+gdp$quarter <- gdp$date
+gdp$growth <- ( gdp[,'GDPC1'] - c(NA, gdp[1:nrow(gdp)-1,'GDPC1']) ) / c(NA, gdp[1:nrow(gdp)-1,'GDPC1'])
 
-gdp$quarter <- row.names(gdp)
-names(gdp) <- c("gdp", "quarter")
-
-gdp$growth <- (gdp[, "gdp"] - c(NA, gdp[1:nrow(gdp) - 1, "gdp"]))/c(NA, gdp[1:nrow(gdp) - 
-    1, "gdp"])
-
-gdp$qtr.num <- as.numeric(gsub(" Q", ".", gdp$quarter))
-
-ggplot(subset(gdp, qtr.num >= 2000.1)) + geom_line(aes(x = qtr.num, y = growth))
+ggplot(subset(gdp, quarter >= ymd('2005-01-01') ), aes(x=quarter)) + geom_line(aes(y=growth)) +  scale_y_continuous(labels = percent)
 ```
 
-![plot of chunk gdp](figure/gdp.png) 
-
+![](calculated_risk_2014_files/figure-html/gdp-1.png) 
 
 ## 2) Employment
 
 How many payroll jobs will be added in 2013? Will we finally see some pickup over the approximately 2.1 to 2.3 million job creation rate of 2011, 2012, and 2013?
 
 ```r
-emp <- as.data.frame(dmseries("http://datamarket.com/data/set/1mj6/employment-level"))
+payroll <- symboldf('NPPTTL')
 
-emp <- data.frame(month_year = row.names(emp), emp_level = emp[, "Employment.Level"])
-emp$month <- match(gsub(" [0-9]{4}", "", emp$month_year), month.abb)
+payroll$added <- ( payroll[,'NPPTTL'] - c(NA, payroll[1:nrow(payroll)-1,'NPPTTL']) ) 
+payroll$added.yr <- payroll$added * 12 / 1000
 
-emp$year <- as.numeric(laply(strsplit(as.character(emp$month_year), " "), tail, 
-    1))
-
-emp$date <- ymd(paste(emp$year, emp$month, 1, sep = "-"))
-head(emp)
+ggplot(subset(payroll, date >= ymd('2005-01-01') ), aes(x=date)) + geom_line(aes(y=added.yr)) +  scale_y_continuous("Jobs added, annualized millions", breaks=seq(-10, 5, 1))
 ```
 
-```
-##   month_year emp_level month year       date
-## 1   Jan 1948     56339     1 1948 1948-01-01
-## 2   Feb 1948     56440     2 1948 1948-02-01
-## 3   Mar 1948     56601     3 1948 1948-03-01
-## 4   Apr 1948     57471     4 1948 1948-04-01
-## 5   May 1948     57763     5 1948 1948-05-01
-## 6   Jun 1948     59724     6 1948 1948-06-01
-```
-
-```r
-
-ggplot(subset(emp, year >= 2000)) + geom_line(aes(x = date, y = emp_level))
-```
-
-![plot of chunk employment](figure/employment.png) 
-
+![](calculated_risk_2014_files/figure-html/employment-1.png) 
 
 
 ## 3) Unemployment Rate
@@ -125,21 +122,21 @@ The unemployment rate is still elevated at 7.0% in November. For the last three 
 
 
 ```r
-# unemp <- as.data.frame(dmseries('http://data.is/qb61uf'))
+unrate <- symboldf('UNRATE')
+unrate$UNRATE <- unrate$UNRATE * 0.01
 
-unemp <- as.data.frame(dmseries("http://datamarket.com/data/set/1les/unemployment-rate"))
-unemp <- data.frame(month_year = row.names(unemp), unemp_rate = unemp[, "All.Industries.Government.Wage.and.Salary.Workers..Not.Seasonally.Adjusted"])
-
-unemp <- subset(unemp, !is.na(unemp_rate))
-unemp$month <- match(gsub(" [0-9]{4}", "", unemp$month_year), month.abb)
-
-unemp$year <- as.numeric(laply(strsplit(as.character(unemp$month_year), " "), 
-    tail, 1))
-
-unemp$date <- ymd(paste(unemp$year, unemp$month, 1, sep = "-"))
-
-ggplot(subset(unemp, year >= 2000)) + geom_line(aes(x = date, y = unemp_rate))
+ggplot(subset(unrate, date >= ymd('2005-01-01') ), aes(x=date)) + geom_line(aes(y=UNRATE)) + geom_hline(yintercept=0.07, color='yellow') +  scale_y_continuous(labels = percent, limits=c(0,.1)) 
 ```
 
-![plot of chunk unemployment](figure/unemployment.png) 
+![](calculated_risk_2014_files/figure-html/unemployment-1.png) 
+
+```r
+civpart <- symboldf('CIVPART')
+civpart$CIVPART <- civpart$CIVPART * 0.01
+
+ggplot(subset(civpart, date >= ymd('2005-01-01') ), aes(x=date)) + geom_line(aes(y=CIVPART))  +  scale_y_continuous(labels = percent) 
+```
+
+![](calculated_risk_2014_files/figure-html/unemployment-2.png) 
+
 
