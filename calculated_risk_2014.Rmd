@@ -6,10 +6,22 @@ Based on Bill McBride&rsquo;s ["Ten Economic Questions for 2014"](http://www.cal
 ```{r}
 require(knitr)
 require(ggplot2)
-require(rdatamarket)
-require(plyr)
+# require(rdatamarket)
+# require(plyr)
 require(lubridate)
+require(quantmod)
+require(scales)
 ```
+
+```{r}
+symboldf <- function(sym){
+  getSymbols(sym, src='FRED')
+  df <- data.frame(get(sym))
+  df$date <- ymd(row.names(df))
+  df
+}
+```
+
 
 ## 1) Economic growth
 
@@ -17,35 +29,24 @@ Heading into 2014, it seems most analysts expect faster economic growth.  So do 
 
 
 ```{r gdp}
-gdp <- as.data.frame(dmseries("http://datamarket.com/data/set/3p4m/gross-domestic-product-gdp-sum-of-pieces#!ds=3p4m&display=line"))
-str(gdp)
+gdp <- symboldf('GDPC1')
 
-gdp$quarter <- row.names(gdp)
-names(gdp) <- c('gdp','quarter')
-  
-gdp$growth <- ( gdp[,'gdp'] - c(NA, gdp[1:nrow(gdp)-1,'gdp']) ) / c(NA, gdp[1:nrow(gdp)-1,'gdp'])
+gdp$quarter <- gdp$date
+gdp$growth <- ( gdp[,'GDPC1'] - c(NA, gdp[1:nrow(gdp)-1,'GDPC1']) ) / c(NA, gdp[1:nrow(gdp)-1,'GDPC1'])
 
-gdp$qtr.num <- as.numeric(gsub(' Q', '.' ,gdp$quarter))
-
-ggplot(subset(gdp, qtr.num >= 2000.1)) + geom_line(aes(x=qtr.num, y=growth))
-
+ggplot(subset(gdp, quarter >= ymd('2005-01-01') ), aes(x=quarter)) + geom_line(aes(y=growth)) +  scale_y_continuous(labels = percent)
 ```
 
 ## 2) Employment
 
 How many payroll jobs will be added in 2013? Will we finally see some pickup over the approximately 2.1 to 2.3 million job creation rate of 2011, 2012, and 2013?
 ```{r employment}
-emp <- as.data.frame(dmseries("http://datamarket.com/data/set/1mj6/employment-level"))
+payroll <- symboldf('NPPTTL')
 
-emp <- data.frame('month_year'=row.names(emp), 'emp_level'=emp[,'Employment.Level'])
-emp$month <- match(gsub(' [0-9]{4}', '',  emp$month_year), month.abb)
+payroll$added <- ( payroll[,'NPPTTL'] - c(NA, payroll[1:nrow(payroll)-1,'NPPTTL']) ) 
+payroll$added.yr <- payroll$added * 12 / 1000
 
-emp$year <- as.numeric(laply(strsplit(as.character(emp$month_year), ' '), tail, 1))
-
-emp$date <- ymd(paste(emp$year, emp$month, 1, sep='-'))
-head(emp)
-
-ggplot(subset(emp, year >= 2000)) + geom_line(aes(x=date, y=emp_level))
+ggplot(subset(payroll, date >= ymd('2005-01-01') ), aes(x=date)) + geom_line(aes(y=added.yr)) +  scale_y_continuous("Jobs added, annualized millions", breaks=seq(-10, 5, 1))
 
 ```
 
@@ -56,18 +57,16 @@ The unemployment rate is still elevated at 7.0% in November. For the last three 
 
 
 ```{r unemployment}
-# unemp <- as.data.frame(dmseries("http://data.is/qb61uf"))
+unrate <- symboldf('UNRATE')
+unrate$UNRATE <- unrate$UNRATE * 0.01
 
-unemp <- as.data.frame(dmseries("http://datamarket.com/data/set/1les/unemployment-rate"))
-unemp <- data.frame('month_year'=row.names(unemp), 'unemp_rate'=unemp[,'All.Industries.Government.Wage.and.Salary.Workers..Not.Seasonally.Adjusted'])
+ggplot(subset(unrate, date >= ymd('2005-01-01') ), aes(x=date)) + geom_line(aes(y=UNRATE)) + geom_hline(yintercept=0.07, color='yellow') +  scale_y_continuous(labels = percent, limits=c(0,.1)) 
 
-unemp <- subset(unemp, !is.na(unemp_rate))
-unemp$month <- match(gsub(' [0-9]{4}', '',  unemp$month_year), month.abb)
 
-unemp$year <- as.numeric(laply(strsplit(as.character(unemp$month_year), ' '), tail, 1))
+civpart <- symboldf('CIVPART')
+civpart$CIVPART <- civpart$CIVPART * 0.01
 
-unemp$date <- ymd(paste(unemp$year, unemp$month, 1, sep='-'))
-
-ggplot(subset(unemp, year >= 2000)) + geom_line(aes(x=date, y=unemp_rate))
-
+ggplot(subset(civpart, date >= ymd('2005-01-01') ), aes(x=date)) + geom_line(aes(y=CIVPART))  +  scale_y_continuous(labels = percent) 
 ```
+
+
