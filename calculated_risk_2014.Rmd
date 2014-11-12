@@ -111,7 +111,20 @@ ggplot(subset(inf, date >= ymd('2002-01-01') ), aes(x=date)) + geom_line(aes(y=S
 
 8) Housing Credit: Will we see easier mortgage lending in 2014? Will we see positive mortgage equity withdrawal (MEW) after six years of negative MEW?
 
+```{r}
+mortgage <-symboldf('MDOAH')
+ggplot(subset(mortgage, date >= ymd('2002-01-01') ), aes(x=date)) + geom_line(aes(y=MDOAH))  +  scale_y_continuous('Mortgage Debt Outstanding, All holders MM $', labels=dollar) 
+
+```
+
 9) Housing Inventory: It appears housing inventory bottomed in early 2013.  Will inventory increase in 2014, and, if so, by how much?
+
+```{r}
+hinv <-symboldf('MSACSR')
+ggplot(subset(hinv, date >= ymd('2002-01-01') ), aes(x=date)) + geom_line(aes(y=MSACSR))  +  scale_y_continuous('Monthly Supply of Homes in the United States') 
+
+```
+
 
 10) Downside Risks: What are the downside risks in 2014?
 
