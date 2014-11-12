@@ -90,7 +90,8 @@ ggplot(subset(inf, date >= ymd('2002-01-01') ), aes(x=date)) + geom_line(aes(y=T
 
 5) Monetary Policy: It appears the Fed's current plan is to reduce their monthly asset purchases by about $10 billion at each FOMC meeting in 2014.  That would put the monthly purchases at close to zero in December 2014.  Will the Fed complete QE3 in 2014?   Or will the Fed continue to buy assets in 2015?
 
-`no FRED chart for this`
+`FRED data provided by @GabPa via pull request`
+
 ```{r}
 fedtotal <- symboldf('WALCL')
 fedtotal$chg4w <- c(rep(NA,4), diff(as.matrix(fedtotal$WALCL),4) ) / 1e3

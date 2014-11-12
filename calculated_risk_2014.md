@@ -166,8 +166,44 @@ ggplot(subset(inf, date >= ymd('2002-01-01') ), aes(x=date)) + geom_line(aes(y=T
 
 5) Monetary Policy: It appears the Fed's current plan is to reduce their monthly asset purchases by about $10 billion at each FOMC meeting in 2014.  That would put the monthly purchases at close to zero in December 2014.  Will the Fed complete QE3 in 2014?   Or will the Fed continue to buy assets in 2015?
 
-`no FRED chart for this`
+`FRED data provided by @GabPa via pull request`
 
+
+```r
+fedtotal <- symboldf('WALCL')
+fedtotal$chg4w <- c(rep(NA,4), diff(as.matrix(fedtotal$WALCL),4) ) / 1e3
+ggplot(subset(fedtotal, date >= ymd('2010-01-01') ), aes(x=date,y=chg4w))  + geom_bar(stat="identity") + xlab("") + ylab("4 week changes of Fed Balance Sheet, $bln ")
+```
+
+```
+## Warning: Stacking not well defined when ymin != 0
+```
+
+![](calculated_risk_2014_files/figure-html/unnamed-chunk-4-1.png) 
+
+```r
+fedtsy  <- symboldf('TREAST')
+fedmbs <- symboldf('MBST')
+fedholds <- data.frame(fedtsy$date,fedtsy$TREAST,fedmbs$MBST)
+colnames(fedholds)=c("date","TREAST","MBST")
+fedholds$BOTH <- fedholds$TREAST +fedholds$MBST
+
+ggplot(subset(fedholds, date >= ymd('2010-01-01') ), aes(x=date,y=BOTH/1e3)) + geom_line() + xlab("") + ylab("Fed Total Holdings of Treasuries + MBS, $bln ")
+```
+
+![](calculated_risk_2014_files/figure-html/unnamed-chunk-4-2.png) 
+
+```r
+fedholds$chg4w <- c(rep(NA,4),diff(as.matrix(fedholds[,"BOTH"]), 4))
+
+ggplot(subset(fedholds, date >= ymd('2010-01-01') ), aes(x=date,y=chg4w/1e3)) + geom_bar(stat="identity") + xlab("") + ylab("4 week changes of Holdings of Treasuries + MBS, $bln ")
+```
+
+```
+## Warning: Stacking not well defined when ymin != 0
+```
+
+![](calculated_risk_2014_files/figure-html/unnamed-chunk-4-3.png) 
 
 
 6) Residential Investment: Residential investment (RI) picked was up solidly in 2012 and 2013.  Note: RI is mostly investment in new single family structures, multifamily structures, home improvement and commissions on existing home sales.  Even with the recent increases, RI is still at a historical low level. How much will RI increase in 2014?
