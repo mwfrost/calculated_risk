@@ -9,6 +9,11 @@ Custom FRED Data Reports
 Based on Bill McBride&rsquo;s ["Ten Economic Questions for 2014"](http://www.calculatedriskblog.com/2013/12/ten-economic-questions-for-2014.html) All the text is directly quoted from Mr. McBride.
 
 ```{r}
+
+list.of.packages <- c("knitr", "ggplot2", "lubridate", "quantmod", "scales")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
 require(knitr)
 require(ggplot2)
 # require(rdatamarket)
