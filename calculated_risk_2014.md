@@ -94,7 +94,11 @@ gdp <- symboldf('GDPC1')
 gdp$quarter <- gdp$date
 gdp$growth <- ( gdp[,'GDPC1'] - c(NA, gdp[1:nrow(gdp)-1,'GDPC1']) ) / c(NA, gdp[1:nrow(gdp)-1,'GDPC1'])
 
-ggplot(subset(gdp, quarter >= ymd('2002-01-01') ), aes(x=quarter)) + geom_line(aes(y=growth)) +  scale_y_continuous(labels = percent)
+ggplot(subset(gdp, quarter >= ymd('2002-01-01') ), aes(x=quarter,y=growth)) + geom_bar(stat="identity") + scale_y_continuous(labels = percent)
+```
+
+```
+## Warning: Stacking not well defined when ymin != 0
 ```
 
 ![](calculated_risk_2014_files/figure-html/gdp-1.png) 
