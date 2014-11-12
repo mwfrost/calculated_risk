@@ -92,6 +92,21 @@ ggplot(subset(inf, date >= ymd('2002-01-01') ), aes(x=date)) + geom_line(aes(y=T
 
 `no FRED chart for this`
 ```{r}
+fedtotal <- symboldf('WALCL')
+fedtotal$chg4w <- c(rep(NA,4), diff(as.matrix(fedtotal$WALCL),4) ) / 1e3
+ggplot(subset(fedtotal, date >= ymd('2010-01-01') ), aes(x=date,y=chg4w))  + geom_bar(stat="identity") + xlab("") + ylab("4 week changes of Fed Balance Sheet, $bln ")
+
+fedtsy  <- symboldf('TREAST')
+fedmbs <- symboldf('MBST')
+fedholds <- data.frame(fedtsy$date,fedtsy$TREAST,fedmbs$MBST)
+colnames(fedholds)=c("date","TREAST","MBST")
+fedholds$BOTH <- fedholds$TREAST +fedholds$MBST
+
+ggplot(subset(fedholds, date >= ymd('2010-01-01') ), aes(x=date,y=BOTH/1e3)) + geom_line() + xlab("") + ylab("Fed Total Holdings of Treasuries + MBS, $bln ")
+
+fedholds$chg4w <- c(rep(NA,4),diff(as.matrix(fedholds[,"BOTH"]), 4))
+
+ggplot(subset(fedholds, date >= ymd('2010-01-01') ), aes(x=date,y=chg4w/1e3)) + geom_bar(stat="identity") + xlab("") + ylab("4 week changes of Holdings of Treasuries + MBS, $bln ")
 
 ```
 
