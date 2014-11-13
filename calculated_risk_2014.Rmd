@@ -149,3 +149,30 @@ ggplot(subset(hinv, date >= ymd('2002-01-01') ), aes(x=date)) + geom_line(aes(y=
 
 10) Downside Risks: What are the downside risks in 2014?
 
+Some things most investors did not have on their agenda for 2014:
+
+Ukraine Conflict, Russia Sanctions Fall in RUB exchange rate
+
+```{r}
+
+
+getFX("EUR/RUB",from="2014-01-01")
+getFX("USD/RUB",from="2014-01-01")
+
+RUBbasket<- 0.55 * USDRUB + 0.45 * EURRUB
+RUBbasket <- data.frame(date=index(RUBbasket),RUBbasket=coredata(RUBbasket[,1]) ) 
+RUBbasket <- fortify(RUBbasket)
+names(RUBbasket) <- c("date","RUBbasket")
+ggplot(RUBbasket, aes(x=date,y=RUBbasket)) + geom_line() + xlab("") + ylab("RUBbasket")
+
+```
+
+Correction of Oil Prices
+
+```{r}
+oil <-na.omit(symboldf('DCOILWTICO'))
+ggplot(subset(oil, date >= ymd('2014-01-01') ), aes(x=date,y=DCOILWTICO)) + geom_line()  +  scale_y_continuous('West Texas Oil Price') 
+
+```
+
+
